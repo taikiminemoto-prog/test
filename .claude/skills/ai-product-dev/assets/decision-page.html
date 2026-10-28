@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>判断用ページ</title>
+<style>
+  :root {
+    --bg: #f6f6f4;
+    --surface: #ffffff;
+    --text: #1d1d1f;
+    --muted: #66666d;
+    --border: #d8d8dd;
+    --accent: #2f56d9;
+    --accent-weak: #e9eefc;
+    --on-accent: #ffffff;
+    --good: #1e7a4c;
+    --warn: #9a5a06;
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416;
+      --surface: #1e1e21;
+      --text: #f2f2f4;
+      --muted: #a3a3ab;
+      --border: #36363c;
+      --accent: #86a2ff;
+      --accent-weak: #242c48;
+      --on-accent: #10131f;
+      --good: #63d39d;
+      --warn: #f0b45c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 140px; }
+  h1 { font-size: 1.6rem; line-height: 1.4; margin: 0 0 8px; }
+  .context { color: var(--muted); white-space: pre-wrap; margin: 0 0 32px; }
+  section.q { margin: 0 0 40px; }
+  h2 { font-size: 1.2rem; line-height: 1.5; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: .9rem; margin: 0 0 16px; }
+  .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+  label.card {
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer;
+  }
+  label.card:has(input:checked) { border-color: var(--accent); background: var(--accent-weak); }
+  label.card:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .card-head { display: flex; gap: 10px; align-items: flex-start; }
+  .card-head input { margin-top: 5px; width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
+  .label { font-weight: 700; }
+  .badge {
+    display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 999px;
+    font-size: .75rem; font-weight: 700; background: var(--accent); color: var(--on-accent); vertical-align: 1px;
+  }
+  .desc { white-space: pre-wrap; }
+  iframe.preview { width: 100%; height: 260px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+  ul.pros, ul.cons { margin: 0; padding-left: 1.4em; font-size: .92rem; }
+  ul.pros li::marker { content: "＋ "; color: var(--good); }
+  ul.cons li::marker { content: "− "; color: var(--warn); }
+  textarea {
+    width: 100%; min-height: 64px; margin-top: 12px; padding: 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text); font: inherit;
+  }
+  #result { min-height: 160px; display: none; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px; }
+  .bar-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  button {
+    font: inherit; font-weight: 700; padding: 10px 22px; border: 0; border-radius: 999px;
+    background: var(--accent); color: var(--on-accent); cursor: pointer;
+  }
+  .status { color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title"></h1>
+  <p class="context" id="context"></p>
+  <div id="questions"></div>
+  <textarea id="result" readonly aria-label="選んだ内容"></textarea>
+</main>
+<div class="bar">
+  <div class="bar-inner">
+    <button id="copy" type="button">結果をコピー</button>
+    <span class="status" id="status" role="status">選び終わったら「結果をコピー」を押して、チャットに貼ってください。</span>
+  </div>
+</div>
+<script>
+// ===== Claude が書き換える所（ここから） =====
+// questions は複数入れられる。multiple: true にすると複数選択になる。
+// preview_html を入れた案は、カードの中にその HTML を表示する（デザイン案や画面の比較用）。
+const DATA = {
+  title: "登録画面の見出しの文言",
+  context: "初めて来た人が、登録ボタンを押す前に読む一文です。\n雰囲気がいちばん合うものを選んでください。",
+  questions: [
+    {
+      id: "headline",
+      question: "どの見出しにしますか？",
+      multiple: false,
+      options: [
+        {
+          id: "a",
+          label: "案A: 成果を約束する",
+          description: "読むだけの毎日を、身につく毎日に。",
+          pros: ["得られる変化がすぐ伝わる"],
+          cons: ["少し大げさに見えるかもしれない"],
+          recommended: true,
+          preview_html: "<div style='font-family:sans-serif;padding:32px;text-align:center'><h1 style='font-size:28px;margin:0 0 16px'>読むだけの毎日を、身につく毎日に。</h1><button style='padding:12px 28px;border:0;border-radius:999px;background:#2f56d9;color:#fff;font-size:16px'>無料ではじめる</button></div>"
+        },
+        {
+          id: "b",
+          label: "案B: 手軽さを伝える",
+          description: "保存するだけ。要約はAIがやります。",
+          pros: ["使い方が一目で分かる"],
+          cons: ["他のサービスとの違いが伝わりにくい"],
+          preview_html: "<div style='font-family:sans-serif;padding:32px;text-align:center'><h1 style='font-size:28px;margin:0 0 16px'>保存するだけ。要約はAIがやります。</h1><button style='padding:12px 28px;border:0;border-radius:999px;background:#2f56d9;color:#fff;font-size:16px'>無料ではじめる</button></div>"
+        }
+      ]
+    },
+    {
+      id: "extras",
+      question: "見出しの下に添えるもの（いくつでも）",
+      multiple: true,
+      options: [
+        { id: "count", label: "利用者数", description: "例: 1,200人が利用中" },
+        { id: "free", label: "無料でできる範囲", description: "例: 月30件まで無料" },
+        { id: "time", label: "登録にかかる時間", description: "例: 30秒で登録" }
+      ]
+    }
+  ]
+};
+// ===== Claude が書き換える所（ここまで） =====
+
+function el(tag, props = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (key === "text") node.textContent = value;
+    else node.setAttribute(key, value);
+  }
+  for (const child of children) if (child) node.append(child);
+  return node;
+}
+
+document.title = DATA.title || "判断用ページ";
+document.getElementById("title").textContent = DATA.title || "";
+document.getElementById("context").textContent = DATA.context || "";
+
+const root = document.getElementById("questions");
+for (const q of DATA.questions) {
+  const section = el("section", { class: "q" }, [
+    el("h2", { text: q.question }),
+    el("p", { class: "hint", text: q.multiple ? "いくつでも選べます。" : "1つ選んでください。" }),
+  ]);
+  const grid = el("div", { class: "options" });
+  for (const o of q.options) {
+    const input = el("input", { type: q.multiple ? "checkbox" : "radio", name: "q-" + q.id, value: o.id });
+    const title = el("div", {}, [
+      el("span", { class: "label", text: o.label }),
+      o.recommended ? el("span", { class: "badge", text: "おすすめ" }) : null,
+    ]);
+    const card = el("label", { class: "card" }, [el("div", { class: "card-head" }, [input, title])]);
+    if (o.description) card.append(el("div", { class: "desc", text: o.description }));
+    if (o.preview_html) {
+      const frame = el("iframe", { class: "preview", sandbox: "allow-scripts", title: o.label + " のプレビュー" });
+      frame.srcdoc = o.preview_html;
+      card.append(frame);
+    }
+    if (o.pros && o.pros.length) card.append(el("ul", { class: "pros" }, o.pros.map((t) => el("li", { text: t }))));
+    if (o.cons && o.cons.length) card.append(el("ul", { class: "cons" }, o.cons.map((t) => el("li", { text: t }))));
+    grid.append(card);
+  }
+  section.append(grid, el("textarea", { id: "c-" + q.id, placeholder: "コメント（任意）: 気になる点、組み合わせたい点など" }));
+  root.append(section);
+}
+
+function buildResult() {
+  const lines = ["## 判断結果: " + (DATA.title || "")];
+  for (const q of DATA.questions) {
+    const picked = q.options
+      .filter((o) => document.querySelector(`input[name="${CSS.escape("q-" + q.id)}"][value="${CSS.escape(o.id)}"]`).checked)
+      .map((o) => `${o.label}（${o.id}）`);
+    lines.push(`- ${q.question}: ${picked.length ? picked.join("、") : "（未選択）"}`);
+    const comment = document.getElementById("c-" + q.id).value.trim();
+    if (comment) lines.push(`  - コメント: ${comment.replace(/\s*\n\s*/g, " ")}`);
+  }
+  return lines.join("\n");
+}
+
+document.getElementById("copy").addEventListener("click", async () => {
+  const text = buildResult();
+  const box = document.getElementById("result");
+  const status = document.getElementById("status");
+  box.value = text;
+  box.style.display = "block";
+  box.scrollIntoView({ block: "center" });
+  try {
+    await navigator.clipboard.writeText(text);
+    status.textContent = "コピーしました。チャットに貼ってください。";
+  } catch {
+    box.focus();
+    box.select();
+    status.textContent = "自動でコピーできませんでした。下の枠の文字をコピーして、チャットに貼ってください。";
+  }
+});
+</script>
+</body>
+</html>
